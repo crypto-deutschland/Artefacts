@@ -1,0 +1,641 @@
+import { useState, useEffect } from "react";
+
+const TERMS = [
+  { id: 1, term: "Bitcoin (BTC)", short: "Das digitale Gold", explanation: "Der erste und bekannteste Coin der Welt. Bitcoin ist dezentral, begrenzt auf 21 Mio. Einheiten und gilt als digitales Gold.", emoji: "₿", category: "Basics" },
+  { id: 2, term: "Altcoin", short: "Alles außer Bitcoin", explanation: "Jede Kryptowährung außer Bitcoin. Die 'anderen Kinder auf dem Schulhof' – von Ethereum bis zum kleinsten Meme-Coin.", emoji: "🪙", category: "Basics" },
+  { id: 3, term: "Blockchain", short: "Unmanipulierbare Datenkette", explanation: "Eine digitale Kette aus Datenblöcken. Jeder Block ist mit dem vorherigen verknüpft – Manipulation? Viel Glück dabei.", emoji: "🔗", category: "Basics" },
+  { id: 4, term: "Wallet", short: "Digitale Geldbörse", explanation: "Deine digitale Geldbörse für Kryptowährungen. Hier werden deine Coins verwahrt und Transaktionen durchgeführt.", emoji: "👛", category: "Basics" },
+  { id: 5, term: "Private Key", short: "Dein Generalschlüssel", explanation: "Der Generalschlüssel zu deinem Krypto-Vermögen. Verlieren oder weitergeben = großes Aua. Niemals teilen!", emoji: "🔑", category: "Basics" },
+  { id: 6, term: "Public Key", short: "Deine Empfangsadresse", explanation: "Deine öffentliche Adresse zum Empfangen von Krypto. Kannst du jedem zeigen – ist wie eine Kontonummer.", emoji: "📬", category: "Basics" },
+  { id: 7, term: "Seed Phrase", short: "12–24 Wiederherstellungswörter", explanation: "12–24 Wörter, die dein Wallet wiederherstellen. Der heilige Gral – offline sichern, niemals digital speichern.", emoji: "🌱", category: "Basics" },
+  { id: 8, term: "HODL", short: "Nicht verkaufen!", explanation: "Ursprünglich ein Tippfehler von 'Hold'. Heute bedeutet es: Coins halten, egal was passiert. Die Strategie vieler Langzeitinvestoren.", emoji: "💎", category: "Slang" },
+  { id: 9, term: "FOMO", short: "Angst, etwas zu verpassen", explanation: "Fear Of Missing Out – die Angst, den nächsten großen Pump zu verpassen. Der Grund, warum viele am Hoch kaufen.", emoji: "😰", category: "Slang" },
+  { id: 10, term: "FUD", short: "Panik-Nachrichten", explanation: "Fear, Uncertainty and Doubt. Schlechte Nachrichten oder Gerüchte, die Panik auslösen und Kurse drücken sollen.", emoji: "😱", category: "Slang" },
+  { id: 11, term: "Bull Market", short: "Markt steigt", explanation: "Der Markt steigt. Alle sind plötzlich Finanzgenies und jeder hat den nächsten 100x-Coin entdeckt.", emoji: "🐂", category: "Markt" },
+  { id: 12, term: "Bear Market", short: "Markt fällt", explanation: "Der Markt fällt. Alle werden plötzlich zu Langzeitinvestoren und sagen, sie wussten es schon immer.", emoji: "🐻", category: "Markt" },
+  { id: 13, term: "Whale", short: "Großinvestor", explanation: "Jemand mit sehr viel Krypto. Whales können durch ihre Trades den Markt merklich bewegen.", emoji: "🐋", category: "Markt" },
+  { id: 14, term: "Shrimp", short: "Kleinanleger", explanation: "Das Gegenteil eines Wals. Kleinanleger mit bescheidenem Kapital – aber auch Shrimps können wachsen!", emoji: "🦐", category: "Markt" },
+  { id: 15, term: "Market Cap", short: "Gesamtwert eines Coins", explanation: "Market Capitalization – der Gesamtwert aller im Umlauf befindlichen Coins. Preis × Anzahl Coins.", emoji: "📊", category: "Markt" },
+  { id: 16, term: "ATH", short: "Allzeithoch", explanation: "All Time High – der höchste Kurs, den ein Coin je erreicht hat. Alle warten drauf, viele verkaufen knapp davor.", emoji: "🏔️", category: "Markt" },
+  { id: 17, term: "ATL", short: "Allzeittief", explanation: "All Time Low – der tiefste Kurs aller Zeiten. Für mutige Käufer oft eine Chance, für andere ein Albtraum.", emoji: "📉", category: "Markt" },
+  { id: 18, term: "Dip", short: "Kursrückgang", explanation: "Ein Kursrückgang. Für manche ein Rabatt zum Nachkaufen, für andere ein Herzinfarkt.", emoji: "📉", category: "Markt" },
+  { id: 19, term: "Buy The Dip", short: "Bei Rückgang kaufen", explanation: "Die Strategie, bei Kursrückgängen zu kaufen. Klingt einfach – schwierig, wenn man gerade 30% im Minus ist.", emoji: "🛒", category: "Markt" },
+  { id: 20, term: "Moon", short: "Kurs explodiert", explanation: "Wenn ein Coin extrem schnell steigt. 'To the moon!' ist der Schlachtruf bei starken Kursanstiegen. 🚀", emoji: "🌕", category: "Slang" },
+  { id: 21, term: "Rug Pull", short: "Entwickler verschwinden mit Geld", explanation: "Projektgründer nehmen das Investorenkapital und verschwinden. Einer der häufigsten Krypto-Betrugsmaschen. Nicht lustig.", emoji: "🚨", category: "Risiken" },
+  { id: 22, term: "Scam", short: "Betrug", explanation: "Betrug in jeglicher Form. In Krypto leider häufig. Finger weg von zu-gut-um-wahr-zu-sein-Angeboten.", emoji: "⚠️", category: "Risiken" },
+  { id: 23, term: "Meme Coin", short: "Coin mit Spaßfaktor", explanation: "Kryptowährungen, die auf Memes oder Witzen basieren. Fundamentaldaten optional. Risiko: hoch.", emoji: "🐸", category: "Coins" },
+  { id: 24, term: "Dogecoin", short: "Der Ur-Meme-Coin", explanation: "Der Urvater aller Meme-Coins. Ein Hund veränderte die Finanzwelt – dank Memes und Elon Musk.", emoji: "🐕", category: "Coins" },
+  { id: 25, term: "Shitcoin", short: "Coin ohne Nutzen", explanation: "Coin ohne erkennbaren Nutzen oder Substanz. Oft mit riesigen Versprechen, null Substanz. DYOR!", emoji: "💩", category: "Coins" },
+  { id: 26, term: "Utility Token", short: "Token mit echtem Nutzen", explanation: "Ein Token, der tatsächliche Funktionen innerhalb eines Projekts erfüllt – z.B. Zahlungsmittel oder Zugangsberechtigung.", emoji: "⚙️", category: "Coins" },
+  { id: 27, term: "Governance Token", short: "Abstimmungsrecht im Projekt", explanation: "Token, die Mitspracherechte bei Projektentscheidungen geben. Inhaber können über Änderungen abstimmen.", emoji: "🗳️", category: "Coins" },
+  { id: 28, term: "Stablecoin", short: "Stabiler Wert", explanation: "Kryptowährung, die ihren Wert stabil hält – meist an den Dollar gekoppelt. z.B. USDT, USDC.", emoji: "🏦", category: "Coins" },
+  { id: 29, term: "DeFi", short: "Dezentrale Finanzwelt", explanation: "Decentralized Finance – Finanzdienstleistungen ohne klassische Banken. Leihen, verleihen, handeln – alles auf der Blockchain.", emoji: "🏗️", category: "DeFi" },
+  { id: 30, term: "DEX", short: "Dezentrale Börse", explanation: "Decentralized Exchange – Krypto handeln ohne Mittelsmann. Du behältst immer Kontrolle über deine Coins.", emoji: "🔄", category: "DeFi" },
+  { id: 31, term: "CEX", short: "Zentrale Börse", explanation: "Centralized Exchange wie Binance oder Coinbase. Einfach zu nutzen, aber du gibst Kontrolle über deine Keys ab.", emoji: "🏢", category: "DeFi" },
+  { id: 32, term: "Staking", short: "Coins hinterlegen & verdienen", explanation: "Coins in einem Netzwerk hinterlegen und dafür Belohnungen erhalten. Wie Zinsen auf dem Sparkonto – nur oft höher.", emoji: "🔒", category: "DeFi" },
+  { id: 33, term: "Lending", short: "Krypto verleihen", explanation: "Deine Krypto verleihen und dafür Zinsen kassieren. Dezentral über Protokolle oder auf zentralen Plattformen.", emoji: "💸", category: "DeFi" },
+  { id: 34, term: "Yield Farming", short: "Renditen maximieren", explanation: "Die Jagd nach möglichst hohen Renditen durch cleveres Einsetzen von DeFi-Protokollen. Höheres Risiko, höhere Chancen.", emoji: "🌾", category: "DeFi" },
+  { id: 35, term: "Liquidity Pool", short: "Kapitaltopf für DEX-Handel", explanation: "Ein Topf aus Krypto-Paaren, der den Handel auf DEXs ermöglicht. Einzahler verdienen Handelsgebühren.", emoji: "💧", category: "DeFi" },
+  { id: 36, term: "APR", short: "Jährliche Rendite (ohne Zinseszins)", explanation: "Annual Percentage Rate – jährliche Rendite ohne Zinseszins-Berechnung. Der einfache Rendite-Vergleichswert.", emoji: "📈", category: "DeFi" },
+  { id: 37, term: "APY", short: "Jährliche Rendite (mit Zinseszins)", explanation: "Annual Percentage Yield – jährliche Rendite inklusive Zinseszins. Meist höher als APR, weil Zinsen reinvestiert werden.", emoji: "📈", category: "DeFi" },
+  { id: 38, term: "Smart Contract", short: "Automatischer Blockchain-Vertrag", explanation: "Selbstausführender Vertrag auf der Blockchain. Kein Mittelsmann nötig – Code ist Gesetz.", emoji: "📝", category: "Technik" },
+  { id: 39, term: "Gas Fee", short: "Transaktionsgebühr", explanation: "Gebühr für Transaktionen auf der Blockchain. Manchmal günstig, manchmal ein kleiner Raubüberfall – je nach Netzwerk.", emoji: "⛽", category: "Technik" },
+  { id: 40, term: "Layer 1", short: "Eigenständige Blockchain", explanation: "Die Basis-Blockchain wie Bitcoin oder Ethereum. Alle anderen Protokolle bauen darauf auf.", emoji: "🏛️", category: "Technik" },
+  { id: 41, term: "Layer 2", short: "Beschleunigt Layer 1", explanation: "Protokolle, die auf Layer 1 aufbauen und Transaktionen schneller und günstiger machen. z.B. Lightning Network, Polygon.", emoji: "⚡", category: "Technik" },
+  { id: 42, term: "NFT", short: "Digitales Eigentumszertifikat", explanation: "Non-Fungible Token – einzigartiges digitales Eigentumszertifikat für Kunst, Musik oder andere Assets.", emoji: "🖼️", category: "Technik" },
+  { id: 43, term: "DAO", short: "Dezentrale Organisation", explanation: "Decentralized Autonomous Organization – eine Organisation ohne klassischen Chef, gesteuert durch Token-Inhaber.", emoji: "🏛️", category: "Technik" },
+  { id: 44, term: "Airdrop", short: "Kostenlose Token", explanation: "Gratis-Token, die an Wallet-Inhaber verteilt werden. Kryptos Version von Gratisproben – manchmal sehr wertvoll.", emoji: "🎁", category: "Markt" },
+  { id: 45, term: "Tokenomics", short: "Wirtschaft eines Coins", explanation: "Das Wirtschaftssystem eines Tokens: Angebot, Verteilung, Nutzung. Wichtig für die Bewertung eines Projekts.", emoji: "📐", category: "Basics" },
+  { id: 46, term: "Whitepaper", short: "Projektkonzept", explanation: "Das offizielle Dokument eines Projekts mit Konzept, Technologie und Vision. Pflichtlektüre vor jedem Investment.", emoji: "📄", category: "Basics" },
+  { id: 47, term: "Mining", short: "Coins durch Rechenleistung erzeugen", explanation: "Kryptowährungen durch Lösen komplexer Rechenaufgaben erzeugen. Energieintensiv, aber die Basis von Bitcoin.", emoji: "⛏️", category: "Technik" },
+  { id: 48, term: "Halving", short: "Bitcoin-Belohnung halbiert sich", explanation: "Alle ~4 Jahre wird die Mining-Belohnung bei Bitcoin halbiert. Historisch oft ein Auslöser für Bullruns.", emoji: "✂️", category: "Technik" },
+  { id: 49, term: "DYOR", short: "Mach deine eigene Recherche", explanation: "Do Your Own Research – der wichtigste Satz in Krypto. Vertrau niemandem blind, prüfe alles selbst.", emoji: "🔍", category: "Slang" },
+  { id: 50, term: "Wen Lambo?", short: "Wann werde ich reich?", explanation: "Krypto-Meme für: 'Wann kann ich mir einen Lamborghini leisten?' – also wann explodiert der Kurs?", emoji: "🏎️", category: "Slang" },
+  { id: 51, term: "Diamond Hands 💎🙌", short: "Verkauft nie", explanation: "Jemand mit Diamond Hands hält seine Coins, egal wie tief der Markt fällt. Das Gegenteil von Paper Hands.", emoji: "💎", category: "Slang" },
+  { id: 52, term: "Paper Hands 📄🙌", short: "Verkauft bei der ersten roten Kerze", explanation: "Jemand, der beim kleinsten Rückgang verkauft. Oft bereut – meistens steigt der Kurs danach wieder.", emoji: "📄", category: "Slang" },
+  { id: 53, term: "NGMI", short: "Not Gonna Make It", explanation: "Not Gonna Make It – wird jemandem gesagt, der schlechte Krypto-Entscheidungen trifft. Liebevoll-gemein.", emoji: "😬", category: "Slang" },
+  { id: 54, term: "WAGMI", short: "We're All Gonna Make It", explanation: "We're All Gonna Make It – der Community-Schlachtruf für gemeinsamen Optimismus. Zusammen reich werden!", emoji: "🤝", category: "Slang" },
+  { id: 55, term: "Exit Liquidity", short: "Der Käufer nach dem Pump", explanation: "Du bist Exit Liquidity, wenn jemand dir seine Coins verkauft, kurz bevor der Kurs crasht. Timing ist alles.", emoji: "🚪", category: "Risiken" },
+
+  // --- NEU: 56–99 ---
+  { id: 56, term: "Ethereum (ETH)", short: "Die Smart-Contract-Blockchain", explanation: "Die zweitgrößte Kryptowährung. Ethereum ermöglicht Smart Contracts und ist die Basis für DeFi, NFTs und tausende Projekte.", emoji: "Ξ", category: "Basics" },
+  { id: 57, term: "Consensus Mechanism", short: "Wie die Blockchain Einigkeit erzielt", explanation: "Das Verfahren, mit dem alle Netzwerkteilnehmer einer Blockchain übereinstimmen. Bekannte Varianten: Proof of Work und Proof of Stake.", emoji: "🤝", category: "Technik" },
+  { id: 58, term: "Proof of Work (PoW)", short: "Konsens durch Rechenleistung", explanation: "Das Verfahren hinter Bitcoin-Mining. Miner lösen komplexe Aufgaben und erhalten dafür Belohnungen. Sicher, aber energieintensiv.", emoji: "⛏️", category: "Technik" },
+  { id: 59, term: "Proof of Stake (PoS)", short: "Konsens durch hinterlegte Coins", explanation: "Validatoren hinterlegen Coins als Sicherheit und bestätigen Transaktionen. Energieeffizienter als Proof of Work.", emoji: "🏅", category: "Technik" },
+  { id: 60, term: "Validator", short: "Prüfer im PoS-Netzwerk", explanation: "Ein Teilnehmer, der Transaktionen in einem Proof-of-Stake-Netzwerk prüft und bestätigt. Erhält dafür Belohnungen.", emoji: "✅", category: "Technik" },
+  { id: 61, term: "Node", short: "Computer im Blockchain-Netzwerk", explanation: "Ein Rechner, der eine Kopie der Blockchain speichert und das Netzwerk unterstützt. Dezentralität entsteht durch viele Nodes.", emoji: "🖥️", category: "Technik" },
+  { id: 62, term: "Fork", short: "Abspaltung einer Blockchain", explanation: "Eine Änderung am Blockchain-Protokoll. Hard Fork = neue, inkompatible Version. Soft Fork = rückwärtskompatible Änderung.", emoji: "🍴", category: "Technik" },
+  { id: 63, term: "Hard Fork", short: "Radikale Protokolländerung", explanation: "Eine grundlegende Änderung der Blockchain-Regeln, die zur Aufspaltung führen kann. Bekanntes Beispiel: Bitcoin Cash von Bitcoin.", emoji: "⚡", category: "Technik" },
+  { id: 64, term: "Mempool", short: "Warteschlange für Transaktionen", explanation: "Der Bereich, in dem noch nicht bestätigte Transaktionen warten. Voll = hohe Gas Fees, leer = günstige Transaktionen.", emoji: "⏳", category: "Technik" },
+  { id: 65, term: "Hash", short: "Digitaler Fingerabdruck", explanation: "Eine eindeutige Zeichenkette, die aus Daten berechnet wird. Jeder Block hat einen Hash – ändert sich ein Byte, ändert sich alles.", emoji: "🔐", category: "Technik" },
+  { id: 66, term: "Cold Wallet", short: "Offline-Aufbewahrung", explanation: "Ein Wallet ohne Internetverbindung. Hardware-Wallets oder Paper-Wallets. Sicherste Methode zur Aufbewahrung.", emoji: "🧊", category: "Basics" },
+  { id: 67, term: "Hot Wallet", short: "Online-Wallet", explanation: "Ein Wallet mit Internetverbindung. Praktisch für schnelle Transaktionen, aber anfälliger für Hacks.", emoji: "🔥", category: "Basics" },
+  { id: 68, term: "Custodial Wallet", short: "Exchange hält deine Keys", explanation: "Ein Wallet, bei dem ein Dritter (z.B. eine Börse) deine Private Keys verwaltet. Bequem, aber du hast nicht die volle Kontrolle.", emoji: "🏦", category: "Basics" },
+  { id: 69, term: "Non-Custodial Wallet", short: "Du hältst deine eigenen Keys", explanation: "Du kontrollierst selbst deine Private Keys. Mehr Verantwortung, aber volle Eigenverantwortung. 'Not your keys, not your coins.'", emoji: "🗝️", category: "Basics" },
+  { id: 70, term: "Not Your Keys, Not Your Coins", short: "Wer Keys hält, besitzt die Coins", explanation: "Krypto-Grundsatz: Solange eine Börse deine Keys hält, gehören dir die Coins nicht wirklich. Eigenverwahrung empfohlen.", emoji: "⚠️", category: "Slang" },
+  { id: 71, term: "Pump & Dump", short: "Künstlicher Kursanstieg + Absturz", explanation: "Koordinierte Käufe treiben den Kurs hoch, dann verkaufen die Initiatoren – der Kurs crasht. Oft bei kleinen Coins.", emoji: "📈📉", category: "Risiken" },
+  { id: 72, term: "Honeypot", short: "Falle für Käufer", explanation: "Ein Smart Contract, bei dem man kaufen, aber nicht verkaufen kann. Sieht verlockend aus – ist eine Falle.", emoji: "🍯", category: "Risiken" },
+  { id: 73, term: "Phishing", short: "Betrug durch gefälschte Seiten", explanation: "Betrüger ahmen echte Webseiten nach, um Wallet-Zugänge zu stehlen. Immer die URL doppelt prüfen!", emoji: "🎣", category: "Risiken" },
+  { id: 74, term: "Impermanent Loss", short: "Verlust im Liquidity Pool", explanation: "Wenn du Liquidität bereitstellst und sich die Preise verschieben, kann dein Anteil weniger wert sein als einfaches HODLen.", emoji: "💧", category: "DeFi" },
+  { id: 75, term: "Slippage", short: "Preisabweichung beim Kauf", explanation: "Der Unterschied zwischen erwartetem und tatsächlichem Kaufpreis. Bei geringer Liquidität oder großen Orders besonders hoch.", emoji: "📊", category: "DeFi" },
+  { id: 76, term: "Flash Loan", short: "Kredit ohne Sicherheit", explanation: "Ein Kredit, der in derselben Transaktion aufgenommen und zurückgezahlt wird. Nur in DeFi möglich – oft für Arbitrage genutzt.", emoji: "⚡", category: "DeFi" },
+  { id: 77, term: "Arbitrage", short: "Preisunterschiede ausnutzen", explanation: "Einen Coin günstig auf einer Börse kaufen und teurer auf einer anderen verkaufen. Profitabel, aber schnell.", emoji: "⚖️", category: "DeFi" },
+  { id: 78, term: "Bridge", short: "Verbindung zwischen Blockchains", explanation: "Ein Protokoll, das Token von einer Blockchain auf eine andere überträgt. z.B. von Ethereum nach Polygon.", emoji: "🌉", category: "Technik" },
+  { id: 79, term: "Interoperabilität", short: "Blockchains kommunizieren miteinander", explanation: "Die Fähigkeit verschiedener Blockchains, miteinander zu interagieren. Eines der großen Ziele der Krypto-Industrie.", emoji: "🔗", category: "Technik" },
+  { id: 80, term: "Wrapped Token", short: "Token auf fremder Blockchain", explanation: "Eine Version eines Coins auf einer anderen Blockchain. z.B. Wrapped Bitcoin (WBTC) auf Ethereum für DeFi-Nutzung.", emoji: "🎁", category: "Technik" },
+  { id: 81, term: "Oracle", short: "Echtwelt-Daten für Blockchains", explanation: "Dienste, die externe Daten (z.B. Preise, Wetterdaten) in Smart Contracts einbringen. Chainlink ist das bekannteste Beispiel.", emoji: "🔮", category: "Technik" },
+  { id: 82, term: "TVL", short: "Total Value Locked", explanation: "Das gesamte Kapital, das in einem DeFi-Protokoll gesperrt ist. Ein wichtiger Indikator für die Größe eines Projekts.", emoji: "🔒", category: "DeFi" },
+  { id: 83, term: "Liquidation", short: "Zwangsverkauf bei Hebel", explanation: "Wenn deine Sicherheiten nicht mehr ausreichen, wird deine Position automatisch geschlossen. Besonders beim Leveraged Trading gefährlich.", emoji: "💥", category: "Risiken" },
+  { id: 84, term: "Leverage / Hebel", short: "Mit geliehenem Kapital handeln", explanation: "Du handelst mit mehr Kapital, als du besitzt. 10x Hebel = 10x Gewinn oder 10x Verlust. Hochriskant.", emoji: "⚙️", category: "Markt" },
+  { id: 85, term: "Long", short: "Auf steigende Kurse wetten", explanation: "Du kaufst oder hältst einen Coin in Erwartung steigender Kurse. 'Ich bin long auf Bitcoin' = ich glaube, er steigt.", emoji: "🚀", category: "Markt" },
+  { id: 86, term: "Short", short: "Auf fallende Kurse wetten", explanation: "Du leihst dir Coins, verkaufst sie und kaufst sie später günstiger zurück. Profitiert von sinkenden Kursen.", emoji: "📉", category: "Markt" },
+  { id: 87, term: "Candlestick", short: "Kerze im Kurs-Chart", explanation: "Eine grafische Darstellung von Eröffnungs-, Schluss-, Hoch- und Tiefstkurs in einem Zeitraum. Basis der technischen Analyse.", emoji: "🕯️", category: "Markt" },
+  { id: 88, term: "Support / Widerstand", short: "Kursmarken im Chart", explanation: "Support = Preiszone, bei der Käufer einsteigen. Widerstand = Zone, bei der Verkäufer dominieren. Wichtig für Trading-Entscheidungen.", emoji: "📏", category: "Markt" },
+  { id: 89, term: "Volatilität", short: "Kursschwankungen", explanation: "Wie stark ein Kurs schwankt. Krypto ist bekannt für hohe Volatilität – an einem Tag +20%, am nächsten -25%.", emoji: "🎢", category: "Markt" },
+  { id: 90, term: "Dominance", short: "Marktanteil von Bitcoin", explanation: "Der Anteil von Bitcoin am gesamten Krypto-Marktvolumen. Hohe Dominance = Altcoins leiden oft. Niedrig = Altseason möglich.", emoji: "👑", category: "Markt" },
+  { id: 91, term: "Altseason", short: "Altcoins überholen Bitcoin", explanation: "Eine Phase, in der Altcoins stärker steigen als Bitcoin. Oft nach einem Bitcoin-Bullrun – die Party wandert weiter.", emoji: "🎉", category: "Markt" },
+  { id: 92, term: "Flippening", short: "Ethereum überholt Bitcoin?", explanation: "Das hypothetische Ereignis, bei dem Ethereum Bitcoins Marktkapitalisierung überholt. Wird seit Jahren diskutiert.", emoji: "🔄", category: "Slang" },
+  { id: 93, term: "Rekt", short: "Hoher Verlust erlitten", explanation: "Aus 'wrecked' – jemand, der durch einen Trade oder Crash massive Verluste erlitten hat. 'Ich bin komplett rekt.'", emoji: "💸", category: "Slang" },
+  { id: 94, term: "Shill", short: "Aggressiv für einen Coin werben", explanation: "Jemanden, der einen Coin übertrieben bewirbt – oft weil er selbst investiert ist. Gesunde Skepsis empfohlen.", emoji: "📢", category: "Slang" },
+  { id: 95, term: "Bagholder", short: "Sitzt auf verlustreichen Coins", explanation: "Jemand, der Coins hält, die massiv an Wert verloren haben – und immer noch hofft, dass sie sich erholen.", emoji: "🎒", category: "Slang" },
+  { id: 96, term: "KYC", short: "Identitätsverifizierung", explanation: "Know Your Customer – Prozess, bei dem Börsen die Identität ihrer Nutzer prüfen. Pflicht bei regulierten Plattformen.", emoji: "🪪", category: "Basics" },
+  { id: 97, term: "AML", short: "Geldwäschebekämpfung", explanation: "Anti-Money Laundering – gesetzliche Vorschriften gegen Geldwäsche. Eng verbunden mit KYC-Prozessen auf Börsen.", emoji: "⚖️", category: "Basics" },
+  { id: 98, term: "Regulation", short: "Staatliche Krypto-Regeln", explanation: "Gesetze und Vorschriften für Kryptowährungen. Weltweit unterschiedlich – mal fördernd, mal einschränkend.", emoji: "🏛️", category: "Basics" },
+  { id: 99, term: "To the Moon 🚀", short: "Kurs soll extrem steigen", explanation: "Der klassische Krypto-Schlachtruf. Wenn jemand 'to the moon' sagt, erwartet er einen massiven Kursanstieg. WAGMI.", emoji: "🌙", category: "Slang" },
+];
+
+const CATEGORIES = ["Alle", "Basics", "Slang", "Markt", "DeFi", "Technik", "Coins", "Risiken"];
+
+function generateQuizQuestion(terms, currentTerm) {
+  const wrongTerms = terms.filter(t => t.id !== currentTerm.id);
+  const shuffled = wrongTerms.sort(() => Math.random() - 0.5).slice(0, 3);
+  const options = [...shuffled, currentTerm].sort(() => Math.random() - 0.5);
+  return {
+    question: currentTerm.short,
+    correct: currentTerm.term,
+    options: options.map(t => t.term),
+    emoji: currentTerm.emoji,
+  };
+}
+
+export default function CryptoDeutschlandKryptobegriffe() {
+  const [mode, setMode] = useState("home"); // home | cards | quiz
+  const [activeCategory, setActiveCategory] = useState("Alle");
+  const [flipped, setFlipped] = useState({});
+  const [cardIndex, setCardIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [quizQuestion, setQuizQuestion] = useState(null);
+  const [quizAnswer, setQuizAnswer] = useState(null);
+  const [quizScore, setQuizScore] = useState(0);
+  const [quizDone, setQuizDone] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [quizTerms, setQuizTerms] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filtered = TERMS.filter(t =>
+    (activeCategory === "Alle" || t.category === activeCategory) &&
+    (searchQuery === "" || t.term.toLowerCase().includes(searchQuery.toLowerCase()) || t.short.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const startQuiz = () => {
+    const pool = activeCategory === "Alle" ? TERMS : TERMS.filter(t => t.category === activeCategory);
+    const shuffled = pool.sort(() => Math.random() - 0.5).slice(0, Math.min(10, pool.length));
+    setQuizTerms(shuffled);
+    setQuizIndex(0);
+    setQuizScore(0);
+    setQuizDone(false);
+    setQuizAnswer(null);
+    setQuizQuestion(generateQuizQuestion(pool, shuffled[0]));
+    setMode("quiz");
+  };
+
+  const handleQuizAnswer = (answer) => {
+    if (quizAnswer !== null) return;
+    setQuizAnswer(answer);
+    if (answer === quizQuestion.correct) setQuizScore(s => s + 1);
+    setTimeout(() => {
+      const nextIndex = quizIndex + 1;
+      if (nextIndex >= quizTerms.length) {
+        setQuizDone(true);
+      } else {
+        const pool = activeCategory === "Alle" ? TERMS : TERMS.filter(t => t.category === activeCategory);
+        setQuizIndex(nextIndex);
+        setQuizQuestion(generateQuizQuestion(pool, quizTerms[nextIndex]));
+        setQuizAnswer(null);
+      }
+    }, 1000);
+  };
+
+  const startCards = () => {
+    setCardIndex(0);
+    setIsFlipped(false);
+    setMode("cards");
+  };
+
+  const shareResult = async () => {
+    const pct = Math.round((quizScore / quizTerms.length) * 100);
+    const text = `Ich hab beim crypto_deutschland Krypto-Quiz ${quizScore}/${quizTerms.length} (${pct}%) erreicht! 🚀 Teste dein Wissen auch:`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+      } catch (e) { /* user cancelled, ignore */ }
+    } else {
+      try {
+        await navigator.clipboard.writeText(text);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      } catch (e) { /* clipboard unavailable, ignore */ }
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "#0a0a0f",
+      fontFamily: "'Syne', 'Space Grotesk', sans-serif",
+      color: "#e8e0d4",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0a0a0f; }
+        ::-webkit-scrollbar-thumb { background: #f0a500; border-radius: 2px; }
+
+        .glow-dot {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(80px);
+          opacity: 0.15;
+          pointer-events: none;
+        }
+
+        .card-flip {
+          perspective: 1000px;
+          cursor: pointer;
+        }
+        .card-inner {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+          transform-style: preserve-3d;
+        }
+        .card-inner.flipped { transform: rotateY(180deg); }
+        .card-face {
+          position: absolute;
+          inset: 0;
+          backface-visibility: hidden;
+          border-radius: 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 32px;
+          text-align: center;
+        }
+        .card-back { transform: rotateY(180deg); }
+
+        .category-pill {
+          border: 1px solid rgba(240,165,0,0.3);
+          background: transparent;
+          color: #9a8a7a;
+          border-radius: 999px;
+          padding: 6px 16px;
+          font-size: 13px;
+          font-family: 'Syne', sans-serif;
+          cursor: pointer;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+        .category-pill:hover { border-color: #f0a500; color: #f0a500; }
+        .category-pill.active {
+          background: #f0a500;
+          color: #0a0a0f;
+          border-color: #f0a500;
+          font-weight: 700;
+        }
+
+        .term-card {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 16px;
+          padding: 20px;
+          cursor: pointer;
+          transition: all 0.2s;
+          position: relative;
+          overflow: hidden;
+        }
+        .term-card:hover {
+          border-color: rgba(240,165,0,0.4);
+          background: rgba(240,165,0,0.05);
+          transform: translateY(-2px);
+        }
+        .term-card.expanded {
+          border-color: rgba(240,165,0,0.6);
+          background: rgba(240,165,0,0.06);
+        }
+
+        .mode-btn {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 16px;
+          padding: 28px 24px;
+          cursor: pointer;
+          transition: all 0.25s;
+          text-align: center;
+          color: #e8e0d4;
+          font-family: 'Syne', sans-serif;
+        }
+        .mode-btn:hover {
+          border-color: #f0a500;
+          background: rgba(240,165,0,0.08);
+          transform: translateY(-3px);
+        }
+
+        .quiz-option {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 16px 20px;
+          cursor: pointer;
+          transition: all 0.2s;
+          text-align: left;
+          color: #e8e0d4;
+          font-family: 'Syne', sans-serif;
+          font-size: 14px;
+          width: 100%;
+        }
+        .quiz-option:hover:not(:disabled) {
+          border-color: #f0a500;
+          background: rgba(240,165,0,0.08);
+        }
+        .quiz-option.correct { border-color: #22c55e !important; background: rgba(34,197,94,0.12) !important; color: #22c55e; }
+        .quiz-option.wrong { border-color: #ef4444 !important; background: rgba(239,68,68,0.12) !important; color: #ef4444; }
+        .quiz-option.reveal-correct { border-color: #22c55e !important; background: rgba(34,197,94,0.08) !important; }
+
+        .back-btn {
+          background: transparent;
+          border: 1px solid rgba(255,255,255,0.1);
+          color: #9a8a7a;
+          border-radius: 8px;
+          padding: 8px 16px;
+          cursor: pointer;
+          font-family: 'Syne', sans-serif;
+          font-size: 13px;
+          transition: all 0.2s;
+        }
+        .back-btn:hover { border-color: #f0a500; color: #f0a500; }
+
+        .nav-arrow {
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: #e8e0d4;
+          border-radius: 50%;
+          width: 44px; height: 44px;
+          display: flex; align-items: center; justify-content: center;
+          cursor: pointer;
+          font-size: 18px;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+        .nav-arrow:hover { border-color: #f0a500; color: #f0a500; }
+        .nav-arrow:disabled { opacity: 0.3; cursor: default; }
+
+        .search-input {
+          width: 100%;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 12px;
+          padding: 12px 16px 12px 40px;
+          color: #e8e0d4;
+          font-family: 'Syne', sans-serif;
+          font-size: 14px;
+          outline: none;
+          transition: border-color 0.2s;
+        }
+        .search-input::placeholder { color: #5a5050; }
+        .search-input:focus { border-color: rgba(240,165,0,0.4); }
+
+        .progress-bar {
+          height: 3px;
+          background: rgba(255,255,255,0.06);
+          border-radius: 99px;
+          overflow: hidden;
+        }
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #f0a500, #ff6b35);
+          border-radius: 99px;
+          transition: width 0.4s ease;
+        }
+      `}</style>
+
+      {/* Background */}
+      <div className="glow-dot" style={{ width: 600, height: 600, background: "#f0a500", top: -200, right: -100 }} />
+      <div className="glow-dot" style={{ width: 400, height: 400, background: "#ff6b35", bottom: -100, left: -100 }} />
+
+      <div style={{ maxWidth: 700, margin: "0 auto", padding: "24px 16px", position: "relative", zIndex: 1 }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          {/* Top bar: logo left, brand right — single compact row */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+            {/* Logo */}
+            <svg width="38" height="38" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="26,2 48,14 48,38 26,50 4,38 4,14" fill="none" stroke="#f0a500" strokeWidth="1.5" opacity="0.4"/>
+              <polygon points="26,9 42,18 42,34 26,43 10,34 10,18" fill="#f0a500" opacity="0.08"/>
+              <line x1="26" y1="2" x2="26" y2="9" stroke="#f0a500" strokeWidth="1.2" opacity="0.5"/>
+              <line x1="48" y1="14" x2="42" y2="18" stroke="#f0a500" strokeWidth="1.2" opacity="0.5"/>
+              <line x1="48" y1="38" x2="42" y2="34" stroke="#f0a500" strokeWidth="1.2" opacity="0.5"/>
+              <line x1="26" y1="50" x2="26" y2="43" stroke="#f0a500" strokeWidth="1.2" opacity="0.5"/>
+              <line x1="4" y1="38" x2="10" y2="34" stroke="#f0a500" strokeWidth="1.2" opacity="0.5"/>
+              <line x1="4" y1="14" x2="10" y2="18" stroke="#f0a500" strokeWidth="1.2" opacity="0.5"/>
+              <text x="26" y="31" textAnchor="middle" fontFamily="Georgia, serif" fontSize="18" fontWeight="bold" fill="#f0a500">₿</text>
+              <circle cx="26" cy="2" r="2" fill="#f0a500" opacity="0.7"/>
+              <circle cx="48" cy="14" r="2" fill="#f0a500" opacity="0.7"/>
+              <circle cx="48" cy="38" r="2" fill="#f0a500" opacity="0.7"/>
+              <circle cx="26" cy="50" r="2" fill="#f0a500" opacity="0.7"/>
+              <circle cx="4" cy="38" r="2" fill="#f0a500" opacity="0.7"/>
+              <circle cx="4" cy="14" r="2" fill="#f0a500" opacity="0.7"/>
+            </svg>
+
+            {/* Right side: brand badge + optional back */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, background: "rgba(240,165,0,0.07)", border: "1px solid rgba(240,165,0,0.2)", borderRadius: 8, padding: "4px 9px" }}>
+                <svg width="11" height="11" viewBox="0 0 52 52" fill="none">
+                  <polygon points="26,2 48,14 48,38 26,50 4,38 4,14" fill="none" stroke="#f0a500" strokeWidth="3"/>
+                  <text x="26" y="33" textAnchor="middle" fontFamily="Georgia" fontSize="22" fontWeight="bold" fill="#f0a500">₿</text>
+                </svg>
+                <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 9, color: "#f0a500", letterSpacing: 0.5, whiteSpace: "nowrap" }}>crypto_deutschland</span>
+              </div>
+              {mode !== "home" && (
+                <button className="back-btn" style={{ padding: "4px 10px", fontSize: 12 }} onClick={() => setMode("home")}>← Zurück</button>
+              )}
+            </div>
+          </div>
+
+          {/* Title row */}
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 9, color: "#f0a500", letterSpacing: 2, textTransform: "uppercase", opacity: 0.6, marginBottom: 3 }}>Krypto-Glossar</div>
+          </div>
+          <h1 style={{ fontFamily: "'Syne'", fontSize: 20, fontWeight: 800, lineHeight: 1.25 }}>
+            Die 99 wichtigsten <span style={{ color: "#f0a500" }}>Krypto-Begriffe</span>
+          </h1>
+        </div>
+
+        {/* HOME MODE */}
+        {mode === "home" && (
+          <>
+            {/* Mode selector */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 28 }}>
+              <button className="mode-btn" onClick={startCards}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>🃏</div>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Kartenflip</div>
+                <div style={{ fontSize: 12, color: "#7a6a5a" }}>Begriff lernen, Karte umdrehen</div>
+              </button>
+              <button className="mode-btn" onClick={startQuiz}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>🧠</div>
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Quiz</div>
+                <div style={{ fontSize: 12, color: "#7a6a5a" }}>Wissen testen, Punkte sammeln</div>
+              </button>
+            </div>
+
+            {/* Category filter */}
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 20, scrollbarWidth: "none" }}>
+              {CATEGORIES.map(cat => (
+                <button key={cat} className={`category-pill ${activeCategory === cat ? "active" : ""}`}
+                  onClick={() => setActiveCategory(cat)}>{cat}</button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div style={{ position: "relative", marginBottom: 20 }}>
+              <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#5a5050", fontSize: 16 }}>🔍</span>
+              <input className="search-input" placeholder="Begriff suchen..." value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)} />
+            </div>
+
+            {/* Counter */}
+            <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: "#5a5050", marginBottom: 16, letterSpacing: 1 }}>
+              {filtered.length} BEGRIFFE · {activeCategory.toUpperCase()}
+            </div>
+
+            {/* Glossar list */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {filtered.map(term => (
+                <div key={term.id}
+                  className={`term-card ${flipped[term.id] ? "expanded" : ""}`}
+                  onClick={() => setFlipped(f => ({ ...f, [term.id]: !f[term.id] }))}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ fontSize: 20 }}>{term.emoji}</span>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{term.term}</div>
+                        <div style={{ fontSize: 12, color: "#7a6a5a", marginTop: 1 }}>{term.short}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 10, color: "#f0a500", background: "rgba(240,165,0,0.1)", padding: "2px 8px", borderRadius: 4 }}>{term.category}</span>
+                      <span style={{ color: "#5a5050", transition: "transform 0.2s", transform: flipped[term.id] ? "rotate(90deg)" : "none" }}>›</span>
+                    </div>
+                  </div>
+                  {flipped[term.id] && (
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(240,165,0,0.15)", fontSize: 13, color: "#c8b8a8", lineHeight: 1.6 }}>
+                      {term.explanation}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div style={{ marginTop: 32, padding: 20, background: "rgba(240,165,0,0.06)", border: "1px solid rgba(240,165,0,0.15)", borderRadius: 16, textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "#9a8a7a", fontStyle: "italic", lineHeight: 1.6 }}>
+                💛 <strong style={{ color: "#f0a500" }}>Goldene Kryptoregel:</strong><br />
+                "Investiere nie mehr, als du bereit bist zu verlieren –<br />außer Nerven. Die verlierst du sowieso." 😄
+              </div>
+            </div>
+
+            {/* Disclaimer */}
+            <div style={{ marginTop: 12, textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: "#4a4540", lineHeight: 1.6, fontFamily: "'IBM Plex Mono'" }}>
+                ⚠️ Nur zu Bildungszwecken · Keine Anlageberatung · Krypto-Investments sind hochriskant.<br />
+                © crypto_deutschland
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* CARDS MODE */}
+        {mode === "cards" && (
+          <>
+            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 24, scrollbarWidth: "none" }}>
+              {CATEGORIES.map(cat => (
+                <button key={cat} className={`category-pill ${activeCategory === cat ? "active" : ""}`}
+                  onClick={() => { setActiveCategory(cat); setCardIndex(0); setIsFlipped(false); }}>{cat}</button>
+              ))}
+            </div>
+
+            <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: "#5a5050", marginBottom: 16, letterSpacing: 1 }}>
+              KARTE {cardIndex + 1} VON {filtered.length}
+            </div>
+            <div className="progress-bar" style={{ marginBottom: 24 }}>
+              <div className="progress-fill" style={{ width: `${((cardIndex + 1) / filtered.length) * 100}%` }} />
+            </div>
+
+            {/* Flip Card */}
+            <div className="card-flip" style={{ height: 280, marginBottom: 24 }}
+              onClick={() => setIsFlipped(f => !f)}>
+              <div className={`card-inner ${isFlipped ? "flipped" : ""}`}>
+                {/* Front */}
+                <div className="card-face" style={{ background: "linear-gradient(135deg, #1a1510 0%, #0f0f14 100%)", border: "1px solid rgba(240,165,0,0.2)" }}>
+                  <div style={{ fontSize: 48, marginBottom: 12 }}>{filtered[cardIndex]?.emoji}</div>
+                  <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 10, color: "#f0a500", letterSpacing: 3, textTransform: "uppercase", marginBottom: 12 }}>{filtered[cardIndex]?.category}</div>
+                  <div style={{ fontWeight: 800, fontSize: 22, textAlign: "center" }}>{filtered[cardIndex]?.term}</div>
+                  <div style={{ marginTop: 16, fontSize: 12, color: "#5a5050" }}>Tippe zum Aufdecken ↓</div>
+                </div>
+                {/* Back */}
+                <div className="card-face card-back" style={{ background: "linear-gradient(135deg, #1a1208 0%, #0a0f14 100%)", border: "1px solid rgba(240,165,0,0.4)" }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 10, color: "#f0a500", letterSpacing: 3, textTransform: "uppercase", marginBottom: 16 }}>{filtered[cardIndex]?.short}</div>
+                  <div style={{ fontSize: 15, lineHeight: 1.7, color: "#c8b8a8", textAlign: "center", maxWidth: 380 }}>{filtered[cardIndex]?.explanation}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20 }}>
+              <button className="nav-arrow" disabled={cardIndex === 0}
+                onClick={() => { setCardIndex(i => i - 1); setIsFlipped(false); }}>←</button>
+              <span style={{ fontFamily: "'IBM Plex Mono'", fontSize: 13, color: "#5a5050", minWidth: 60, textAlign: "center" }}>{cardIndex + 1} / {filtered.length}</span>
+              <button className="nav-arrow" disabled={cardIndex >= filtered.length - 1}
+                onClick={() => { setCardIndex(i => i + 1); setIsFlipped(false); }}>→</button>
+            </div>
+          </>
+        )}
+
+        {/* QUIZ MODE */}
+        {mode === "quiz" && (
+          <>
+            {!quizDone ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                  <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: "#5a5050", letterSpacing: 1 }}>
+                    FRAGE {quizIndex + 1} / {quizTerms.length}
+                  </div>
+                  <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: "#f0a500" }}>
+                    ⭐ {quizScore} Punkte
+                  </div>
+                </div>
+                <div className="progress-bar" style={{ marginBottom: 28 }}>
+                  <div className="progress-fill" style={{ width: `${((quizIndex) / quizTerms.length) * 100}%` }} />
+                </div>
+
+                {quizQuestion && (
+                  <>
+                    <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(240,165,0,0.2)", borderRadius: 20, padding: 28, marginBottom: 24, textAlign: "center" }}>
+                      <div style={{ fontSize: 40, marginBottom: 12 }}>{quizQuestion.emoji}</div>
+                      <div style={{ fontSize: 12, color: "#5a5050", fontFamily: "'IBM Plex Mono'", letterSpacing: 2, marginBottom: 10 }}>WELCHER BEGRIFF BEDEUTET...</div>
+                      <div style={{ fontWeight: 700, fontSize: 20 }}>"{quizQuestion.question}"</div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {quizQuestion.options.map(opt => {
+                        let cls = "quiz-option";
+                        if (quizAnswer !== null) {
+                          if (opt === quizQuestion.correct) cls += " reveal-correct";
+                          if (opt === quizAnswer && opt !== quizQuestion.correct) cls += " wrong";
+                          if (opt === quizAnswer && opt === quizQuestion.correct) cls += " correct";
+                        }
+                        return (
+                          <button key={opt} className={cls} disabled={quizAnswer !== null}
+                            onClick={() => handleQuizAnswer(opt)}>
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              // Quiz Done
+              <div style={{ textAlign: "center", padding: "40px 20px" }}>
+                <div style={{ fontSize: 64, marginBottom: 16 }}>
+                  {quizScore >= quizTerms.length * 0.8 ? "🏆" : quizScore >= quizTerms.length * 0.5 ? "🌕" : "📚"}
+                </div>
+                <div style={{ fontWeight: 800, fontSize: 28, marginBottom: 8 }}>
+                  {quizScore} / {quizTerms.length}
+                </div>
+                <div style={{ color: "#9a8a7a", marginBottom: 8, fontSize: 15 }}>
+                  {quizScore >= quizTerms.length * 0.8 ? "Absoluter Krypto-Profi! 🚀" :
+                    quizScore >= quizTerms.length * 0.5 ? "Guter Ansatz – weiter so! 💪" : "Noch etwas üben – du schaffst das! 📖"}
+                </div>
+                <div style={{ fontFamily: "'IBM Plex Mono'", fontSize: 11, color: "#5a5050", marginBottom: 32, letterSpacing: 1 }}>
+                  {Math.round((quizScore / quizTerms.length) * 100)}% RICHTIG
+                </div>
+                <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                  <button className="mode-btn" style={{ padding: "14px 24px", fontSize: 14, borderColor: "rgba(240,165,0,0.4)" }} onClick={shareResult}>
+                    {shareCopied ? "✅ Kopiert!" : "📤 Teilen"}
+                  </button>
+                  <button className="mode-btn" style={{ padding: "14px 24px", fontSize: 14 }} onClick={startQuiz}>
+                    🔄 Nochmal
+                  </button>
+                  <button className="mode-btn" style={{ padding: "14px 24px", fontSize: 14 }} onClick={() => setMode("home")}>
+                    📚 Glossar
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+      </div>
+    </div>
+  );
+}
